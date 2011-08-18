@@ -1,0 +1,70 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<title>Flot Examples</title>
+<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="excanvas.min.js"></script><![endif]-->
+<script language="javascript" type="text/javascript" src="jquery.js"></script>
+<script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
+<script language="javascript" type="text/javascript" src="jquery.flot.navigate.js"></script>
+<script language="javascript" type="text/javascript" src="jquery.flot.touch.js"></script>
+</head>
+<body>
+  <h1>Flot Touch Example</h1>
+  <div id="placeholder" style="width:600px;height:300px;"></div>
+  <p class="message"></p>
+
+  <script type="text/javascript">
+    $(function () {
+      // generate data set from a parametric function with a fractal look
+      function sumf(f, t, m) {
+        var res = 0;
+        for (var i = 1; i < m; ++i) {
+          res += f(i * i * t) / (i * i);
+        }
+        return res;
+      }
+  
+      var d1 = [];
+      for (var t = 0; t <= 2 * Math.PI; t += 0.01) {
+        d1.push([sumf(Math.cos, t, 10), sumf(Math.sin, t, 10)]);
+      }
+  
+      var data = [d1];
+      var placeholder = $("#placeholder");
+      var options = {
+        series: { lines: { show: true }, shadowSize: 0 },
+        xaxis: { zoomRange: [0.1, 10], panRange: [-10, 10] },
+        yaxis: { zoomRange: [0.1, 10], panRange: [-10, 10] },
+        zoom: {
+          interactive: true
+        },
+        pan: {
+          interactive: true
+        },
+        touch: {
+          pan: 'x',
+          scale: 'xy'
+        }
+      };
+      var plot = $.plot(placeholder, data, options);
+
+      // show pan/zoom messages to illustrate events
+      placeholder.bind('plotpan', function (event, plot) {
+        var axes = plot.getAxes();
+        $(".message").html("Panning to x: "  + axes.xaxis.min.toFixed(2) +
+          " &ndash; " + axes.xaxis.max.toFixed(2) +
+          " and y: " + axes.yaxis.min.toFixed(2) +
+          " &ndash; " + axes.yaxis.max.toFixed(2));
+      });
+      placeholder.bind('plotzoom', function (event, plot) {
+        var axes = plot.getAxes();
+        $(".message").html("Zooming to x: "  + axes.xaxis.min.toFixed(2) +
+          " &ndash; " + axes.xaxis.max.toFixed(2) +
+          " and y: " + axes.yaxis.min.toFixed(2) +
+          " &ndash; " + axes.yaxis.max.toFixed(2));
+      });
+    });
+  </script>
+</body>
+</html>
