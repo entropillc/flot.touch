@@ -83,8 +83,8 @@
 				if (touches.length === 1) {
 					isPanning = true;
 					lastTouchPosition = {
-						x: touches[0].screenX,
-						y: touches[0].screenY
+						x: touches[0].pageX, // pageX
+						y: touches[0].pageY  // pageY
 					};
 					lastTouchDistance = 0;
 				}
@@ -92,15 +92,40 @@
 				else if (touches.length === 2) {
 					isZooming = true;
 					lastTouchPosition = {
-						x: (touches[0].screenX + touches[1].screenX) / 2,
-						y: (touches[0].screenY + touches[1].screenY) / 2
+						x: (touches[0].pageX + touches[1].pageX) / 2,
+						y: (touches[0].pageY + touches[1].pageY) / 2
 					};
-					lastTouchDistance = Math.sqrt(Math.pow(touches[1].screenX - touches[0].screenX, 2) + Math.pow(touches[1].screenY - touches[0].screenY, 2));
+					lastTouchDistance = Math.sqrt(Math.pow(touches[1].pageX - touches[0].pageX, 2) + Math.pow(touches[1].pageY - touches[0].pageY, 2));
+				}
+				
+				var offset = placeholder.offset();
+				var rect = {
+				  x: offset.left,
+				  y: offset.top,
+				  width: placeholder.width(),
+				  height: placeholder.height()
+				};
+				
+				var normalizedTouchPosition = {
+				  x: lastTouchPosition.x,
+				  y: lastTouchPosition.y
+				};
+				
+				if (normalizedTouchPosition.x < rect.x) {
+				  normalizedTouchPosition.x = rect.x;
+				} else if (normalizedTouchPosition.x > rect.x + rect.width) {
+				  normalizedTouchPosition.x = rect.x + rect.width;
+				}
+
+				if (normalizedTouchPosition.y < rect.y) {
+				  normalizedTouchPosition.y = rect.y;
+				} else if (normalizedTouchPosition.y > rect.y + rect.height) {
+				  normalizedTouchPosition.y = rect.y + rect.height;
 				}
 				
 				scaleOrigin = {
-  			  x: Math.round((lastTouchPosition.x / screen.width) * 100),
-  			  y: Math.round((lastTouchPosition.y / screen.height) * 100)
+  			  x: Math.round((normalizedTouchPosition.x / rect.width) * 100),
+  			  y: Math.round((normalizedTouchPosition.y / rect.height) * 100)
   			};
 
   			container.css('-webkit-transform-origin', scaleOrigin.x + '% ' + scaleOrigin.y + '%');
@@ -116,8 +141,8 @@
 				
 				if (isPanning && touches.length === 1) {
 					position = {
-						x: touches[0].screenX,
-						y: touches[0].screenY
+						x: touches[0].pageX,
+						y: touches[0].pageY
 					};
 					delta = {
 						x: lastTouchPosition.x - position.x,
@@ -132,10 +157,10 @@
 				}
 				
 				else if (isZooming && touches.length === 2) {
-					distance = Math.sqrt(Math.pow(touches[1].screenX - touches[0].screenX, 2) + Math.pow(touches[1].screenY - touches[0].screenY, 2));
+					distance = Math.sqrt(Math.pow(touches[1].pageX - touches[0].pageX, 2) + Math.pow(touches[1].pageY - touches[0].pageY, 2));
 					position = {
-						x: (touches[0].screenX + touches[1].screenX) / 2,
-						y: (touches[0].screenY + touches[1].screenY) / 2
+						x: (touches[0].pageX + touches[1].pageX) / 2,
+						y: (touches[0].pageY + touches[1].pageY) / 2
 					};
 					delta = distance - lastTouchDistance;
 					
@@ -153,13 +178,11 @@
 			  var container = placeholder.children('div.flot-touch-container');
 			  
 			  // Apply the pan offset.
-			  switch (options.touch.pan) {
+			  switch (options.touch.pan.toLowerCase()) {
   			  case 'x':
-  			  case 'X':
   			    plot.pan({ left: relativeOffset.x * -1, top: 0 });
   			    break;
   			  case 'y':
-  			  case 'Y':
   			    plot.pan({ left: 0, top: relativeOffset.y * -1 });
   			    break;
   			  default:
@@ -168,20 +191,43 @@
   			}
   			
   			// Apply the scale.
-  			// TODO: Add support for single-axis scaling here.
-			  switch (options.touch.scale) {
-  			  case 'x':
-  			  case 'X':
-  			    plot.zoom({ amount: relativeScale });
-  			    break;
-  			  case 'y':
-  			  case 'Y':
-  			    plot.zoom({ amount: relativeScale });
-  			    break;
-  			  default:
-  			    plot.zoom({ amount: relativeScale });
-  			    break;
-  			}
+  			if (relativeScale !== 1.0) {
+  			  var width = plot.width();
+  			  var height = plot.height();
+  			  var scaleOriginPixel = {
+  			    x: Math.round((scaleOrigin.x / 100) * width),
+  			    y: Math.round((scaleOrigin.y / 100) * height)
+  			  };
+  			  var range = {
+        	  x: {
+        	    min: scaleOriginPixel.x - (scaleOrigin.x / 100) * width / relativeScale,
+        	    max: scaleOriginPixel.x + (1 - (scaleOrigin.x / 100)) * width / relativeScale
+        	  },
+        	  y: {
+        	    min: scaleOriginPixel.y - (scaleOrigin.y / 100) * height / relativeScale,
+        	    max: scaleOriginPixel.y + (1 - (scaleOrigin.y / 100)) * height / relativeScale
+        	  }
+        	};
+
+  			  $.each(plot.getAxes(), function(index, axis) {
+  			    if (axis.direction === options.touch.scale.toLowerCase() || options.touch.scale.toLowerCase() == 'xy') {
+          	  var min = axis.c2p(range[axis.direction].min);
+          	  var max = axis.c2p(range[axis.direction].max);
+
+          	  if (min > max) {
+          	    var temp = min;
+          	    min = max;
+          	    max = temp;
+          	  }
+
+          	  axis.options.min = min;
+          	  axis.options.max = max;
+  			    }
+  			  });
+    			
+    			plot.setupGrid();
+        	plot.draw();
+			  }
 			  
 				isPanning = false;
 				isZooming = false;
