@@ -1,8 +1,11 @@
 (function($) {
+  var isReady = false;
 	var options = {
 	  touch: {
 	    pan: 'xy',
-	    scale: 'xy'
+	    scale: 'xy',
+	    autoWidth: true,
+	    autoHeight: true
 	  }
 	};
 
@@ -22,21 +25,17 @@
 			relativeOffset.x -= delta.x;
 			relativeOffset.y -= delta.y;
 			
-			switch (options.touch.pan) {
+			switch (options.touch.pan.toLowerCase()) {
 			  case 'x':
-			  case 'X':
 			    placeholder.children('div.flot-touch-container').css('-webkit-transform', 'translateX(' + relativeOffset.x + 'px)');
 			    break;
 			  case 'y':
-			  case 'Y':
 			    placeholder.children('div.flot-touch-container').css('-webkit-transform', 'translateY(' + relativeOffset.y + 'px)');
 			    break;
 			  default:
 			    placeholder.children('div.flot-touch-container').css('-webkit-transform', 'translate(' + relativeOffset.x + 'px,' + relativeOffset.y + 'px)');
 			    break;
 			}
-			
-	    $(".message").html("Delta pan x: "  + delta.x + ", y: " + delta.y);
 		}
 		
 		function scale(delta) {
@@ -46,25 +45,40 @@
 			
 			relativeScale *= 1 + (delta / 100);
 			
-			switch (options.touch.scale) {
+			switch (options.touch.scale.toLowerCase()) {
 			  case 'x':
-			  case 'X':
 			    container.css('-webkit-transform', 'scaleX(' + relativeScale + ')');
 			    break;
 			  case 'y':
-			  case 'Y':
 			    container.css('-webkit-transform', 'scaleY(' + relativeScale + ')');
 			    break;
 			  default:
 			    container.css('-webkit-transform', 'scale(' + relativeScale + ')');
 			    break;
 			}
-			
-			$(".message").html("Delta scale: " + delta);
 		}
-		
-		function draw(plot, ctx) {
-			var placeholder = plot.getPlaceholder();
+
+		function processOptions(plot, options) {	    
+		  var placeholder = plot.getPlaceholder();
+    
+		  if (options.touch.autoWidth) {
+		    placeholder.css('width', '100%');
+		  }
+		  
+		  if (options.touch.autoHeight) {
+  		  var placeholderParent = placeholder.parent();
+  		  var height = 0;
+		    
+  		  placeholderParent.siblings().each(function() {
+  		    height -= $(this).outerHeight();
+  		  });
+		    
+  		  height -= parseInt(placeholderParent.css('padding-top'), 10);
+        height -= parseInt(placeholderParent.css('padding-bottom'), 10);
+		    height += window.innerHeight;
+		    
+  		  placeholder.css('height', (height <= 0) ? 100 : height + 'px');
+  		}
 		}
 
 		function bindEvents(plot, eventHolder) {
@@ -83,8 +97,8 @@
 				if (touches.length === 1) {
 					isPanning = true;
 					lastTouchPosition = {
-						x: touches[0].pageX, // pageX
-						y: touches[0].pageY  // pageY
+						x: touches[0].pageX,
+						y: touches[0].pageY
 					};
 					lastTouchDistance = 0;
 				}
@@ -130,8 +144,7 @@
 
   			container.css('-webkit-transform-origin', scaleOrigin.x + '% ' + scaleOrigin.y + '%');
 				
-				$(".message").html("Event touchstart: " + touches.length + " touch(es)");
-				
+				// Return false to prevent touch scrolling.
 				return false;
 			});
 			
@@ -176,18 +189,18 @@
   			var placeholder = plot.getPlaceholder();
   			var options = plot.getOptions();
 			  var container = placeholder.children('div.flot-touch-container');
-			  
-			  // Apply the pan offset.
-			  switch (options.touch.pan.toLowerCase()) {
-  			  case 'x':
-  			    plot.pan({ left: relativeOffset.x * -1, top: 0 });
-  			    break;
-  			  case 'y':
-  			    plot.pan({ left: 0, top: relativeOffset.y * -1 });
-  			    break;
-  			  default:
-  			    plot.pan({ left: relativeOffset.x * -1, top: relativeOffset.y * -1 });
-  			    break;
+  			
+  			// Apply the pan.
+  			if (relativeOffset.x !== 0 || relativeOffset.y !== 0) {
+  			  $.each(plot.getAxes(), function(index, axis) {
+  			    if (axis.direction === options.touch.pan.toLowerCase() || options.touch.pan.toLowerCase() == 'xy') {
+              var min = axis.c2p(axis.p2c(axis.min) - relativeOffset[axis.direction]);
+              var max = axis.c2p(axis.p2c(axis.max) - relativeOffset[axis.direction]);
+              
+              axis.options.min = min;
+              axis.options.max = max;
+  			    }
+  			  });
   			}
   			
   			// Apply the scale.
@@ -224,10 +237,10 @@
           	  axis.options.max = max;
   			    }
   			  });
-    			
-    			plot.setupGrid();
-        	plot.draw();
 			  }
+			  
+  			plot.setupGrid();
+      	plot.draw();
 			  
 				isPanning = false;
 				isZooming = false;
@@ -250,9 +263,21 @@
 			placeholder.unbind('touchstart').unbind('touchmove').unbind('touchend');
 		}
 
-		plot.hooks.draw.push(draw);
+		plot.hooks.processOptions.push(processOptions);
 		plot.hooks.bindEvents.push(bindEvents);
 		plot.hooks.shutdown.push(shutdown);
+
+    if (!isReady) {
+      $(document).bind('ready orientationchange', function(evt) {
+			  window.scrollTo(0, 1);
+			  
+			  setTimeout(function() {
+			    $.plot(placeholder, plot.getData(), plot.getOptions());
+			  }, 50);
+			});
+  		
+  		isReady = true;
+  	}
 	}
 
 	$.plot.plugins.push({

@@ -1,19 +1,37 @@
 <!DOCTYPE HTML>
 <html>
 <head>
-<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, minimum-scale=1, maximum-scale=1"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
 <title>Flot Examples</title>
-<!--[if lte IE 8]><script language="javascript" type="text/javascript" src="excanvas.min.js"></script><![endif]-->
-<script language="javascript" type="text/javascript" src="jquery.js"></script>
-<script language="javascript" type="text/javascript" src="jquery.flot.js"></script>
-<script language="javascript" type="text/javascript" src="jquery.flot.navigate.js"></script>
-<script language="javascript" type="text/javascript" src="jquery.flot.touch.js"></script>
+<link rel="stylesheet" media="screen" href="css/jquery.mobile-1.0b2.css"/>
+<!--[if lte IE 8]><script type="text/javascript" src="lib/excanvas.js"></script><![endif]-->
+<script type="text/javascript" src="lib/jquery-1.6.2.js"></script>
+<script type="text/javascript" src="jquery.flot.js"></script>
+<script type="text/javascript" src="jquery.flot.touch.js"></script>
+<script type="text/javascript" src="lib/jquery.mobile-1.0b2.js"></script>
 </head>
 <body>
-  <h1>Flot Touch Example</h1>
-  <div id="placeholder" style="width:600px;height:300px;"></div>
-  <p class="message"></p>
-
+  <div id="flot" data-role="page">
+    <div data-role="header">
+      <h1>Flot Touch</h1>
+      <a href="#about" data-icon="info" class="ui-btn-right">About</a>
+    </div>
+    <div data-role="content">
+      <div id="placeholder"></div>
+    </div>
+  </div>
+  <div id="about" data-role="page">
+    <div data-role="header">
+      <a href="#" data-icon="arrow-l" data-rel="back">Back</a>
+      <h1>About Flot Touch</h1>
+    </div>
+    <div data-role="content">
+      
+    </div>
+  </div>
   <script type="text/javascript">
     $(function () {
       // generate data set from a parametric function with a fractal look
@@ -48,22 +66,6 @@
         }
       };
       var plot = $.plot(placeholder, data, options);
-
-      // show pan/zoom messages to illustrate events
-      placeholder.bind('plotpan', function (event, plot) {
-        var axes = plot.getAxes();
-        $(".message").html("Panning to x: "  + axes.xaxis.min.toFixed(2) +
-          " &ndash; " + axes.xaxis.max.toFixed(2) +
-          " and y: " + axes.yaxis.min.toFixed(2) +
-          " &ndash; " + axes.yaxis.max.toFixed(2));
-      });
-      placeholder.bind('plotzoom', function (event, plot) {
-        var axes = plot.getAxes();
-        $(".message").html("Zooming to x: "  + axes.xaxis.min.toFixed(2) +
-          " &ndash; " + axes.xaxis.max.toFixed(2) +
-          " and y: " + axes.yaxis.min.toFixed(2) +
-          " &ndash; " + axes.yaxis.max.toFixed(2));
-      });
     });
   </script>
 </body>
