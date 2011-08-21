@@ -12,17 +12,34 @@
 <script type="text/javascript" src="jquery.flot.js"></script>
 <script type="text/javascript" src="jquery.flot.touch.js"></script>
 <script type="text/javascript" src="lib/jquery.mobile-1.0b2.js"></script>
-<style type="text/css">
-  @media screen and (-webkit-min-device-pixel-ratio: 2) {
-    
-  }
-</style>
+<script type="text/javascript">
+  $(function() {
+    var sin = [];
+    for (var i = -20; i <= 20; i += 0.5) {
+      sin.push([i, Math.sin(i)]);
+    }
+
+    $.plot($('#placeholder'), [{
+      data: sin,
+      label: 'sin(x)'
+    }], {
+      series: {
+        lines: { show: true },
+        points: { show: true }
+      },
+      touch: {
+        pan: 'x',
+        scale: 'x'
+      }
+    });
+  });
+</script>
 </head>
 <body>
   <div id="flot" data-role="page">
     <div data-role="header">
+      <a href="#about" data-icon="info">About</a>
       <h1>Flot Touch</h1>
-      <a href="#about" data-icon="info" class="ui-btn-right">About</a>
     </div>
     <div data-role="content">
       <div id="placeholder"></div>
@@ -37,41 +54,5 @@
       
     </div>
   </div>
-  <script type="text/javascript">
-    $(function () {
-      // generate data set from a parametric function with a fractal look
-      function sumf(f, t, m) {
-        var res = 0;
-        for (var i = 1; i < m; ++i) {
-          res += f(i * i * t) / (i * i);
-        }
-        return res;
-      }
-  
-      var d1 = [];
-      for (var t = 0; t <= 2 * Math.PI; t += 0.01) {
-        d1.push([sumf(Math.cos, t, 10), sumf(Math.sin, t, 10)]);
-      }
-  
-      var data = [d1];
-      var placeholder = $("#placeholder");
-      var options = {
-        series: { lines: { show: true }, shadowSize: 0 },
-        xaxis: { zoomRange: [0.1, 10], panRange: [-10, 10] },
-        yaxis: { zoomRange: [0.1, 10], panRange: [-10, 10] },
-        zoom: {
-          interactive: true
-        },
-        pan: {
-          interactive: true
-        },
-        touch: {
-          pan: 'x',
-          scale: 'x'
-        }
-      };
-      var plot = $.plot(placeholder, data, options);
-    });
-  </script>
 </body>
 </html>
