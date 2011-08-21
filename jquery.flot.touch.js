@@ -256,6 +256,25 @@
 				});
 			});
 		}
+		
+		function processDatapoints(plot, series, datapoints) {
+		  if (window.devicePixelRatio) {
+  			var placeholder = plot.getPlaceholder();
+			  
+			  placeholder.children('canvas').each(function(index, canvas) {
+    		  var context  = canvas.getContext('2d');
+    		  var width = $(canvas).attr('width');
+    		  var height = $(canvas).attr('height');
+
+    		  $(canvas).attr('width', width * window.devicePixelRatio);
+    		  $(canvas).attr('height', height * window.devicePixelRatio);
+    		  $(canvas).css('width', width + 'px');
+    		  $(canvas).css('height', height + 'px');
+
+    		  context.scale(window.devicePixelRatio, window.devicePixelRatio);
+			  });
+  		}
+		}
 
 		function shutdown(plot, eventHolder) {
 			var placeholder = plot.getPlaceholder();
@@ -265,6 +284,7 @@
 
 		plot.hooks.processOptions.push(processOptions);
 		plot.hooks.bindEvents.push(bindEvents);
+		plot.hooks.processDatapoints.push(processDatapoints);
 		plot.hooks.shutdown.push(shutdown);
 
     if (!isReady) {
